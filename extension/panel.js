@@ -115,6 +115,99 @@
   });
   $("#dev-back").addEventListener("click", showList);
 
+  // ----- Settlements tab -----
+  let scenarios = null;          // [{ name, items:[...], note }]
+  let scenario = "Manibus";
+  const setDetailCache = new Map();
+  const setListEl = $("#set-list");
+  const setListView = $("#set-list-view");
+  const setDetailView = $("#set-detail-view");
+  const setDetailEl = $("#set-detail");
+
+  function setShowList() { setDetailView.classList.remove("active"); setListView.classList.add("active"); }
+  function setShowDetail() { setListView.classList.remove("active"); setDetailView.classList.add("active"); setDetailEl.scrollTop = 0; }
+
+  function renderSettlements() {
+    if (!scenarios) return;
+    const sc = scenarios.find((s) => s.name === scenario);
+    if (!sc || !sc.items.length) {
+      setListEl.innerHTML = `<div class="status">${esc((sc && sc.note) || "No settlements added yet.")}</div>`;
+      return;
+    }
+    setListEl.innerHTML = sc.items.map((s) => `
+      <button class="row" data-id="${esc(s.id)}">
+        ${s.thumb ? `<img class="thumb wide" src="${esc(s.thumb)}" alt="" loading="lazy">` : `<div class="thumb wide"></div>`}
+        <div class="txt">
+          <div class="name">${esc(s.name)}</div>
+          <div class="sub">${esc([s.zone, s.location].filter(Boolean).join(" · "))}</div>
+        </div>
+        <span class="chev">&rsaquo;</span>
+      </button>`).join("");
+  }
+
+  function renderSettlement(d) {
+    const fields = (d.fields || []).map((f) => `<div class="dv-field"><span class="k">${esc(f.label)}:</span> ${esc(f.value)}</div>`).join("");
+    const sections = (d.sections || []).map((s) => `
+      <div class="dv-section">
+        <div class="dv-sec-title">${esc(s.label)}</div>
+        ${s.items.map((t) => `<div class="dv-row"><span class="dot"></span>${esc(t)}</div>`).join("")}
+      </div>`).join("");
+    setDetailEl.innerHTML = `
+      <div class="dv-card">
+        ${d.image ? `<img class="dv-map" src="${esc(d.image)}" alt="${esc(d.name)} map">` : ""}
+        <span class="dv-tag">${esc(d.scenario || "")}</span>
+        <div class="dv-title">${esc(d.name)}</div>
+        ${fields ? `<div class="dv-fields">${fields}</div>` : ""}
+        ${sections || `<div class="dv-section"><div class="dv-row">No facility drops recorded yet.</div></div>`}
+        <a class="dv-link" href="${esc(d.url)}" target="_blank" rel="noopener">Open on ohwikiguide.com &nearr;</a>
+      </div>`;
+  }
+
+  async function openSettlement(id) {
+    setShowDetail();
+    if (setDetailCache.has(id)) return renderSettlement(setDetailCache.get(id));
+    setDetailEl.innerHTML = `<div class="status">Loading…</div>`;
+    try {
+      const r = await fetch(`${API}/api/settlements/${encodeURIComponent(id)}`);
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      setDetailCache.set(id, d);
+      renderSettlement(d);
+    } catch (e) {
+      setDetailEl.innerHTML = `<div class="status">Couldn't load this settlement.<br><button data-retry="${esc(id)}">Retry</button></div>`;
+    }
+  }
+
+  async function loadSettlements() {
+    setListEl.innerHTML = `<div class="status">Loading settlements…</div>`;
+    try {
+      const r = await fetch(`${API}/api/settlements`);
+      if (!r.ok) throw new Error(r.status);
+      scenarios = (await r.json()).scenarios || [];
+      renderSettlements();
+    } catch (e) {
+      setListEl.innerHTML = `<div class="status">Couldn't reach the wiki right now.<br><button data-retry="">Retry</button></div>`;
+    }
+  }
+
+  $("#set-chips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    scenario = b.dataset.scenario;
+    document.querySelectorAll("#set-chips .chip").forEach((c) => c.classList.toggle("active", c === b));
+    renderSettlements();
+  });
+  setListEl.addEventListener("click", (e) => {
+    const retry = e.target.closest("[data-retry]"); if (retry) return loadSettlements();
+    const row = e.target.closest(".row"); if (row) openSettlement(row.dataset.id);
+  });
+  setDetailEl.addEventListener("click", (e) => {
+    const retry = e.target.closest("[data-retry]"); if (retry) openSettlement(retry.dataset.retry);
+  });
+  $("#set-back").addEventListener("click", setShowList);
+
+  // Load settlements the first time the tab is opened.
+  document.querySelector('.tab[data-tab="settlements"]').addEventListener("click", () => { if (!scenarios) loadSettlements(); });
+
   // Twitch: wait for authorization so the extension is fully initialised, but
   // the data is public so we load it straight away either way.
   if (window.Twitch && Twitch.ext) {
