@@ -31,7 +31,8 @@ app.get("/", (req, res) => res.type("text").send("OHWikiGuide Twitch Extension b
 
 app.get("/health", async (req, res) => {
   const c = await deviations.status();
-  res.json({ ok: c.count > 0, deviations: c.count, updated: c.updated, error: c.error || undefined });
+  const s = await settlements.status();
+  res.json({ ok: c.count > 0, deviations: c.count, settlements: s.count, updated: c.updated, error: c.error || s.error || undefined });
 });
 
 app.get("/api/deviations", async (req, res) => {
@@ -50,7 +51,24 @@ app.get("/api/deviations/:id", async (req, res) => {
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
 
+const settlements = require("./settlements");
+app.get("/api/settlements", async (req, res) => {
+  try {
+    res.set("Cache-Control", "public, max-age=300");
+    res.json(await settlements.list());
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+app.get("/api/settlements/:id", async (req, res) => {
+  try {
+    const d = await settlements.get(req.params.id);
+    if (!d) return res.status(404).json({ error: "not found" });
+    res.set("Cache-Control", "public, max-age=300");
+    res.json(d);
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
 app.listen(PORT, () => {
   console.log(`[ohwikiguide-ext] listening on ${PORT}`);
   deviations.refresh().catch((e) => console.error("[ohwikiguide-ext] initial load failed:", e.message));
+  settlements.refresh().catch((e) => console.error("[ohwikiguide-ext] settlements load failed:", e.message));
 });
