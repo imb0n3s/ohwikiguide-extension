@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OHWikiGuide</title>
+<style>
+  :root {
+    --bg: #0d1319;
+    --bg2: #11161c;
+    --card: #0e141b;
+    --line: #1f2a35;
+    --line2: #223041;
+    --text: #e6edf3;
+    --text2: #c3ccd6;
+    --muted: #9fb0c3;
+    --accent: #2f9ce8;
+    --gold: #e0a94a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  a { color: var(--accent); }
+  button { font: inherit; cursor: pointer; }
+
+  /* ===== TABS (top bar) ===== */
+  .tabs {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--line2);
+    background: var(--bg);
+    flex: 0 0 auto;
+    gap: 2px;
+    padding: 0 6px;
+  }
+  .tab {
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 10px 12px 8px;
+    transition: color .15s, border-color .15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: #fff; border-bottom-color: var(--accent); }
+  .tabs .brand {
+    margin-left: auto;
+    align-self: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    padding-right: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+  .view.active { display: flex; }
+
+  .toolbar { padding: 8px 8px 6px; flex: 0 0 auto; border-bottom: 1px solid var(--line); }
+  .search {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+  }
+  .search:focus { border-color: var(--accent); }
+  .chips { display: flex; gap: 6px; margin-top: 6px; }
+  .chip {
+    flex: 1;
+    background: var(--bg2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 0;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .chip.active { color: #fff; border-color: var(--accent); background: rgba(47,156,232,.15); }
+
+  .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .scroll::-webkit-scrollbar { width: 6px; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 7px 10px;
+    color: var(--text);
+  }
+  .row:hover { background: var(--bg2); }
+  .row .thumb {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    object-fit: contain;
+  }
+  .row .txt { min-width: 0; flex: 1; }
+  .row .name { font-weight: 600; font-size: 13px; }
+  .row .sub { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .cat { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-left: 6px; }
+  .row .chev { color: var(--line2); flex: 0 0 auto; }
+
+  .status { padding: 24px 12px; text-align: center; color: var(--muted); }
+  .status button { margin-top: 10px; background: var(--bg2); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 12px; }
+
+  /* ===== DETAIL ===== */
+  .back {
+    display: flex; align-items: center; gap: 6px;
+    background: transparent; border: 0; color: var(--accent);
+    padding: 8px 10px; font-weight: 600; width: 100%; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .dv-card { padding: 10px; }
+  .dv-top { display: flex; gap: 10px; align-items: flex-start; }
+  .dv-imgbox {
+    flex: 0 0 auto; width: 84px; height: 84px; border-radius: 12px; overflow: hidden;
+    background: var(--bg2); border: 1px solid var(--line);
+  }
+  .dv-imgbox img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .dv-head { min-width: 0; flex: 1; }
+  .dv-tag { color: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; }
+  .dv-title { font-size: 17px; font-weight: 700; color: #f0f4f8; margin: 0 0 4px; line-height: 1.2; }
+  .dv-func { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .dv-fields { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .dv-field { font-size: 12px; color: var(--text2); line-height: 1.45; }
+  .k { color: var(--gold); font-weight: 600; }
+  .dv-section { margin-top: 10px; background: #0b1117; border: 1px solid #1a2531; border-radius: 10px; padding: 8px 10px; }
+  .dv-sec-title { font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .dv-row { font-size: 12px; color: var(--text2); padding: 4px 0; border-top: 1px solid #16202b; line-height: 1.45; }
+  .dv-row:first-of-type { border-top: none; padding-top: 0; }
+  .dv-link {
+    display: block; margin: 12px 0 4px; text-align: center;
+    background: var(--bg2); border: 1px solid var(--line2); border-radius: 8px;
+    padding: 8px; color: var(--text); text-decoration: none; font-weight: 600; font-size: 12px;
+  }
+  .dv-link:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" role="tab" data-tab="deviation">Deviation</button>
+  <span class="brand">OH Guide</span>
+</nav>
+
+<!-- ===== DEVIATION TAB ===== -->
+<section id="tab-deviation" class="view active">
+  <div id="dev-list-view" class="view active">
+    <div class="toolbar">
+      <input id="dev-search" class="search" type="search" placeholder="Search deviations…" autocomplete="off" spellcheck="false">
+      <div class="chips" id="dev-chips">
+        <button class="chip active" data-cat="">All</button>
+        <button class="chip" data-cat="Crafting">Crafting</button>
+        <button class="chip" data-cat="Combat">Combat</button>
+        <button class="chip" data-cat="Territory">Territory</button>
+      </div>
+    </div>
+    <div id="dev-list" class="scroll"><div class="status">Loading deviations…</div></div>
+  </div>
+  <div id="dev-detail-view" class="view">
+    <button class="back" id="dev-back">&larr; All deviations</button>
+    <div id="dev-detail" class="scroll"></div>
+  </div>
+</section>
+
+<script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+<script>
+(function () {
+  // >>> Set this to your extension backend URL once it is deployed (no trailing slash) <<<
+  const API = "https://YOUR-BACKEND.up.railway.app";
+  const $ = (s, r) => (r || document).querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ----- tabs -----
+  document.querySelectorAll(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b === btn));
+      document.querySelectorAll("body > section.view").forEach((v) => v.classList.toggle("active", v.id === "tab-" + btn.dataset.tab));
+    });
+  });
+
+  // ----- Deviation tab -----
+  let all = [];
+  let query = "";
+  let cat = "";
+  const detailCache = new Map();
+
+  const listEl = $("#dev-list");
+  const listView = $("#dev-list-view");
+  const detailView = $("#dev-detail-view");
+  const detailEl = $("#dev-detail");
+
+  function showList() { detailView.classList.remove("active"); listView.classList.add("active"); }
+  function showDetail() { listView.classList.remove("active"); detailView.classList.add("active"); detailEl.scrollTop = 0; }
+
+  function renderList() {
+    const q = query.trim().toLowerCase();
+    const rows = all.filter((d) =>
+      (!cat || d.categories.includes(cat)) &&
+      (!q || d.name.toLowerCase().includes(q) || (d.function || "").toLowerCase().includes(q))
+    );
+    if (!rows.length) {
+      listEl.innerHTML = `<div class="status">No deviations match “${esc(query)}”.</div>`;
+      return;
+    }
+    listEl.innerHTML = rows.map((d) => `
+      <button class="row" data-id="${esc(d.id)}">
+        ${d.image ? `<img class="thumb" src="${esc(d.image)}" alt="" loading="lazy">` : `<div class="thumb"></div>`}
+        <div class="txt">
+          <div class="name">${esc(d.name)}${d.categories[0] ? `<span class="cat">${esc(d.categories[0])}</span>` : ""}</div>
+          <div class="sub">${esc(d.function)}</div>
+        </div>
+        <span class="chev">&rsaquo;</span>
+      </button>`).join("");
+  }
+
+  function renderDetail(d) {
+    const fields = d.fields.map((f) => `<div class="dv-field">${f.label ? `<span class="k">${esc(f.label)}:</span> ` : ""}${esc(f.value)}</div>`).join("");
+    const sections = d.sections.map((s) => `
+      <div class="dv-section">
+        <div class="dv-sec-title">${esc(s.label)}</div>
+        ${s.rows.map((r) => r.k != null
+          ? `<div class="dv-row"><span class="k">${esc(r.k)}:</span> ${esc(r.v)}</div>`
+          : `<div class="dv-row">${esc(r.text)}</div>`).join("")}
+      </div>`).join("");
+    detailEl.innerHTML = `
+      <div class="dv-card">
+        <div class="dv-top">
+          ${d.image ? `<div class="dv-imgbox"><img src="${esc(d.image)}" alt="${esc(d.name)}"></div>` : ""}
+          <div class="dv-head">
+            <span class="dv-tag">${esc((d.categories || []).join(" · ") || "DEVIATION")}</span>
+            <div class="dv-title">${esc(d.name)}</div>
+            ${d.function ? `<div class="dv-func">${esc(d.function)}</div>` : ""}
+          </div>
+        </div>
+        ${fields ? `<div class="dv-fields">${fields}</div>` : ""}
+        ${sections}
+        <a class="dv-link" href="${esc(d.url)}" target="_blank" rel="noopener">Open on ohwikiguide.com &nearr;</a>
+      </div>`;
+  }
+
+  async function openDetail(id) {
+    showDetail();
+    if (detailCache.has(id)) return renderDetail(detailCache.get(id));
+    detailEl.innerHTML = `<div class="status">Loading…</div>`;
+    try {
+      const r = await fetch(`${API}/api/deviations/${encodeURIComponent(id)}`);
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      detailCache.set(id, d);
+      renderDetail(d);
+    } catch (e) {
+      detailEl.innerHTML = `<div class="status">Couldn't load this deviation.<br><button data-retry="${esc(id)}">Retry</button></div>`;
+    }
+  }
+
+  async function loadList() {
+    listEl.innerHTML = `<div class="status">Loading deviations…</div>`;
+    try {
+      const r = await fetch(`${API}/api/deviations`);
+      if (!r.ok) throw new Error(r.status);
+      all = (await r.json()).items || [];
+      renderList();
+    } catch (e) {
+      listEl.innerHTML = `<div class="status">Couldn't reach the wiki right now.<br><button data-retry="">Retry</button></div>`;
+    }
+  }
+
+  $("#dev-search").addEventListener("input", (e) => { query = e.target.value; renderList(); });
+  $("#dev-chips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    cat = b.dataset.cat;
+    document.querySelectorAll("#dev-chips .chip").forEach((c) => c.classList.toggle("active", c === b));
+    renderList();
+  });
+  listEl.addEventListener("click", (e) => {
+    const retry = e.target.closest("[data-retry]"); if (retry) return loadList();
+    const row = e.target.closest(".row"); if (row) openDetail(row.dataset.id);
+  });
+  detailEl.addEventListener("click", (e) => {
+    const retry = e.target.closest("[data-retry]"); if (retry) openDetail(retry.dataset.retry);
+  });
+  $("#dev-back").addEventListener("click", showList);
+
+  // Twitch: wait for authorization so the extension is fully initialised, but
+  // the data is public so we load it straight away either way.
+  if (window.Twitch && Twitch.ext) {
+    Twitch.ext.onContext(() => {});
+    Twitch.ext.onError((e) => console.error("twitch ext error", e));
+  }
+  loadList();
+})();
+</script>
+</body>
+</html>
